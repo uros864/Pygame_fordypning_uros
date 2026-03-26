@@ -14,3 +14,5 @@ Tar også inspirasjon fra hollow knight: silksong, det er ulike steder hvor man 
 
 
 Gjøre til at man kan bruke både wasd og piltastene for å bevege seg rundt.-Marcus
+
+
