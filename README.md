@@ -13,4 +13,4 @@ Tar litt inspirasjon fra et annet pygame som heter trosnoth. Man kan gå rundt p
 Tar også inspirasjon fra hollow knight: silksong, det er ulike steder hvor man blir stengt in og må slåss mot flere waves av fiender, eller en boss. Etter at man slår en boss får man et nytt våpen eller upgrade.  Det er også fiender rundt omkring i verden. Noen fiender kan fly, noen hoppe og noen er kun på bakken. Ulike steder der man må gjøre parkour for å komme seg videre. 
 
 
-
+Gjøre til at man kan bruke både wasd og piltastene for å bevege seg rundt.-Marcus

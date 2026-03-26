@@ -1,107 +1,310 @@
 import pygame
+import spritesheet
 import sys
-from pygame.locals import *
+import math
 
 # Initialize Pygame
 pygame.init()
 
-platform = 200
 # Set up the game window
-WIDTH, HEIGHT = 600, 800
+WIDTH, HEIGHT = 1200, 675
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Pygame")
 
+screenSurface =pygame.Surface((WIDTH,HEIGHT), pygame.SRCALPHA)
 clock = pygame.time.Clock()
 
-#background variabler
-x = 0
-y = 0
+# Colors
+PLAYER_COLOR = (0, 200, 255)
+BULLET_COLOR = (255, 50, 50)
+PLATFORM_COLOR = (0, 0, 255)
+BG_COLOR = (30, 30, 30)
+BLACK = (0,0,0)
+MENY_BG_COLOR = (10,10,200)
 
-#Høyder for ulike steder
-ground_y = HEIGHT - 80
-left_rect = -75
+BUTTON_COLOR = (70, 130, 180)
+HOVER_COLOR = (100, 170, 220)
+TEXT_COLOR = (255, 255, 255)
 
-# Square settings
-square_size = 50
-square_x = WIDTH // 2 -square_size
-square_y = square_size + ground_y
-speed = 8
+# Font
+font = pygame.font.SysFont(None, 36)
 
-#hopp variabler
+world_x = 0  
+world_y = 0
+dheight = 0
+dwidth = 0 
+
+# Player setup
+square_width = 60
+square_height = 110
+player = pygame.Rect(WIDTH // 2 - square_width // 2+dwidth, HEIGHT- 80- square_height +dheight, square_width, square_height)
+
 y_velocity = 0
-gravity = 0.6
+gravity = 0.5
 jump_strength = -12
 on_ground = False
+double_jump = True
+t = 1
+
+speed = 1
+
+_Idle = pygame.image.load('PNGSheets/_Idle.png').convert_alpha()
+_run = pygame.image.load('PNGSheets/_Run.png').convert_alpha()
+_run_left = pygame.image.load('PNGSheets/_Run_left.png').convert_alpha()
+sprite_sheet = spritesheet.SpritreSheet(_Idle)
+
+
+animation_list = []
+animation_steps = 10
+last_update = pygame.time.get_ticks()
+animation_cooldown = 100
+frame = 0
 
 
 
-screen.fill((255, 255, 255))
 
-pygame.display.update()
 
+# objects
+solids = [
+    pygame.Rect(0, 650+dheight, 200, 100),
+    pygame.Rect(-WIDTH * 10, HEIGHT - 80+dheight, WIDTH * 20, 200),  # ground
+    pygame.Rect(-300, 550+dheight, 150, 30),
+    pygame.Rect(400, 500+dheight, 150, 30),
+    pygame.Rect(400, 200+dheight, 150, 30),
+    pygame.Rect(800, 350+dheight, 200, 30)
+]
+# Bullets 
+bullets = []
+bullet_speed = 12
+bullet_radius = 5
+bullet_cooldown = 0
+
+
+
+# Button class
+class Button:
+    def __init__(self, text, x, y, w, h):
+        self.text = text
+        self.rect = pygame.Rect(x, y, w, h)
+
+    def draw(self, surface):
+        color = HOVER_COLOR if self.rect.collidepoint(pygame.mouse.get_pos()) else BUTTON_COLOR
+        pygame.draw.rect(surface, color, self.rect)
+        pygame.draw.rect(surface, (0, 0, 0), self.rect, 2)
+        text_surf = font.render(self.text, True, TEXT_COLOR)
+        text_rect = text_surf.get_rect(center=self.rect.center)
+        surface.blit(text_surf, text_rect)
+
+    def clicked(self, event):
+        return (
+            event.type == pygame.MOUSEBUTTONDOWN
+            and event.button == 1
+            and self.rect.collidepoint(event.pos)
+        )
+
+# Create buttons
+buttons = [
+    Button("Play", WIDTH/2-WIDTH/10, HEIGHT/2-WIDTH/40-HEIGHT/8, WIDTH/5, WIDTH/20),
+    Button("Options", WIDTH/2-WIDTH/10, HEIGHT/2-WIDTH/40, WIDTH/5, WIDTH/20),
+    Button("Quit", WIDTH/2-WIDTH/10, HEIGHT/2-WIDTH/40+HEIGHT/8, WIDTH/5, WIDTH/20),
+]
+option = [
+    Button("Menu", WIDTH/2-WIDTH/10, HEIGHT/2-WIDTH/40-HEIGHT/8, WIDTH/5, WIDTH/20),
+    Button("Size +", WIDTH/2-WIDTH/10-WIDTH/9, HEIGHT/2-WIDTH/40, WIDTH/5, WIDTH/20),    
+    Button("Size -", WIDTH/2-WIDTH/10 +WIDTH/9, HEIGHT/2-WIDTH/40, WIDTH/5, WIDTH/20),
+    Button("1200x675", WIDTH/2-WIDTH/10, HEIGHT/2-WIDTH/40+HEIGHT/8, WIDTH/5, WIDTH/20),
+    Button("1920x1080", WIDTH/2-WIDTH/10, HEIGHT/2-WIDTH/40+HEIGHT/4, WIDTH/5, WIDTH/20)
+]
+
+meny = True
+options = False
+
+# Game Loop
 while True:
+    animation_list = []
+    for x in range(animation_steps):
+        animation_list.append(sprite_sheet.get_image(x, 120, 80, 3, BLACK))
+    sprite_sheet = spritesheet.SpritreSheet(_Idle)
+        
+    keys = pygame.key.get_pressed()
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
 
-    # Key presses
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_a]:
-        x += speed
-    if keys[pygame.K_d]:
-        x -= speed
-    if keys[pygame.KMOD_LSHIFT]:
-        speed = 10
-    if keys[pygame.K_SPACE] and on_ground:
-        y_velocity = jump_strength
-        on_ground = False
+        for button in buttons:
+            if button.clicked(event) and meny == True and options == False:
+                print(f"{button.text} clicked!")
+
+                if button.text == "Quit":
+                    pygame.quit()
+                    sys.exit()
+
+                if button.text == "Play":
+                    meny = False
+                    solids = [
+                        pygame.Rect(0+dwidth, 550+dheight, 200, 100),
+                        pygame.Rect(-WIDTH * 10 +dwidth, HEIGHT - 80, WIDTH * 20, 100),  # ground
+                        pygame.Rect(-300+dwidth, 450+dheight, 150, 30),
+                        pygame.Rect(400+dwidth, 400+dheight, 150, 30),
+                        pygame.Rect(400+dwidth, 100+dheight, 150, 30),
+                        pygame.Rect(800+dwidth, 250+dheight, 200, 30)
+                        ]
+                    player = pygame.Rect(player.x +dwidth/2, player.y +dheight, square_width, square_height)
+                    pygame.display.flip()
+
+                if button.text == "Options":
+                    options = True
+
+        for button in option:
+            if button.clicked(event) and options == True:
+                print(f"{button.text} clicked!")
+
+                if button.text == "Menu":
+                    options = False
+
+                if button.text == "Size +" and HEIGHT < 1080:
+                    WIDTH += 16
+                    HEIGHT += 9
+                    dheight += 9
+                    dwidth += 8                        
+                    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+                    screenSurface =pygame.Surface((WIDTH,HEIGHT), pygame.SRCALPHA)
+
+
+                if button.text == "Size -" and 600 < HEIGHT:
+                    WIDTH -= 16
+                    HEIGHT -= 9
+                    dheight -= 9
+                    dwidth -= 8
+                    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+                    screenSurface =pygame.Surface((WIDTH,HEIGHT), pygame.SRCALPHA)
+                    pygame.display.flip()
+                if button.text == "1200x675":
+                    WIDTH = 1200
+                    HEIGHT = 675
+                    dheight = 0
+                    dwidth = 0                        
+                    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+                    screenSurface =pygame.Surface((WIDTH,HEIGHT), pygame.SRCALPHA)
+                    pygame.display.flip()
+        # Jump
+        if event.type  == pygame.KEYDOWN and on_ground:
+            if event.key == pygame.K_SPACE or keys[pygame.K_UP]:
+                y_velocity = jump_strength
+                on_ground = False
+                double_jump = True
         
 
-    # Apply gravity
-    y_velocity += gravity
-    square_y += y_velocity
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                meny = not meny
 
-    # Collision with ground
-    if square_y + square_size >= ground_y:
-        square_y = ground_y - square_size
-        y_velocity = 0
-        on_ground = True
+    player_center = [player.centerx, player.centery]
 
-    if square_y + square_size >= ground_y-75 and x>52 and x<290:
-        square_y = ground_y - square_size+left_rect
-        y_velocity = 0
-        on_ground = True
+    # Movement Input
 
-    # Keep square on screen
-    square_x = max(0, min(WIDTH - square_size, square_x))
-    square_y = max(0, min(HEIGHT - square_size, square_y))
+    dx = 0
+    
 
+    if keys[pygame.K_a] or keys[pygame.K_LEFT]:
+        dx = current_speed
+        sprite_sheet = spritesheet.SpritreSheet(_run_left)
+    if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+        dx = -current_speed
+        sprite_sheet = spritesheet.SpritreSheet(_run)
+    if keys[pygame.K_LSHIFT] and on_ground and dx != 0:
+        current_speed = 10
+        jump_strength = -15
+    else: 
+        jump_strength = -13
+        current_speed = 8
+
+
+
+
+    # Move world horizontally
+    if meny == False:
+        world_x += dx
+
+
+    # Horizontal Collision and moving of world
+    if dx != 0 and meny == False:
+        for solid in solids:
+            solid_screen = solid.move(world_x, 0)
+
+            if player.colliderect(solid_screen):
+                if dx > 0:
+                    world_x -= current_speed
+                elif dx < 0:
+                    world_x += current_speed
+
+
+    # Apply Gravity
+    if meny == False:
+        y_velocity += gravity
+        player.y += y_velocity
+
+        on_ground = False
+
+
+    # Vertical Collision
+    for solid in solids:
+        solid_screen = solid.move(world_x, 0)
+
+        if player.colliderect(solid_screen):
+
+            if y_velocity > 0:  # Falling
+                player.bottom = solid_screen.top
+                y_velocity = 0
+                on_ground = True
+
+            elif y_velocity < 0:  # Jumping up
+                player.top = solid_screen.bottom
+                y_velocity = 0
+
+
+    if player.y < 100:
+
+        world_y += HEIGHT-300
+
+
+    current_time = pygame.time.get_ticks()
+    if current_time - last_update >= animation_cooldown:
+        frame +=1
+        last_update = current_time
+        if frame >= len(animation_list):
+            frame = 0
     # Drawing
-    screen.fill((30, 30, 30))  # background
+    screen.fill(BG_COLOR)
 
 
-    pygame.draw.rect(screen, (0,   0, 255),
-                    [(x)+0, (y)+650, 200, 100])
+    # Draw solids
+    for solid in solids:
+        draw_rect = solid.move(world_x, 0)
+        pygame.draw.rect(screen, PLATFORM_COLOR, draw_rect)
+
+    # player hitbox
+    #pygame.draw.rect(screen, PLAYER_COLOR, player)
+
+    #player drawing
+
+    screen.blit(animation_list[frame],(player.x- 195 +square_width ,player.y-240+square_height))
 
 
+    if meny:
+        screenSurface.fill((30,30,30,128))                         # notice the alpha value in the color
+        screen.blit(screenSurface, (0,0))
 
+        #draw buttons
+    if meny and options == False:    
+        for button in buttons:
+            button.draw(screen)
 
-    pygame.draw.rect(screen, (0,   0, 255),
-                    [(x)-WIDTH*10, (y)+(HEIGHT)-80, WIDTH*20, 200])
-
-
-
-    pygame.draw.polygon(screen, (50, 100, 100), 
-                        [[(x)+300, (y)+280], [(x)+500, (y)+280],
-                        [(x)+500, (y)+330]])
-
-    #spiller
-    pygame.draw.rect(
-        screen,
-        (0, 100, 255),
-        (square_x, square_y, square_size, square_size)
-    )
-
+    if options == True:    
+        for button in option:
+            button.draw(screen)
+            
     pygame.display.flip()
-    clock.tick(30)
+    dt = clock.tick(60)
