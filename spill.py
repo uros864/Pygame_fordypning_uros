@@ -33,6 +33,7 @@ world_x = 0
 world_y = 0
 dheight = 0
 dwidth = 0 
+height_level = 1
 
 # Player setup
 square_width = 60
@@ -46,7 +47,13 @@ on_ground = False
 double_jump = True
 t = 1
 
+
+
 speed = 1
+
+
+teleport_timer = pygame.USEREVENT + 1
+
 
 _Idle = pygame.image.load('PNGSheets/_Idle.png').convert_alpha()
 _run = pygame.image.load('PNGSheets/_Run.png').convert_alpha()
@@ -66,13 +73,15 @@ frame = 0
 
 # objects
 solids = [
-    pygame.Rect(0, 650+dheight, 200, 100),
-    pygame.Rect(-WIDTH * 10, HEIGHT - 80+dheight, WIDTH * 20, 200),  # ground
-    pygame.Rect(-300, 550+dheight, 150, 30),
-    pygame.Rect(400, 500+dheight, 150, 30),
-    pygame.Rect(400, 200+dheight, 150, 30),
-    pygame.Rect(800, 350+dheight, 200, 30)
-]
+    pygame.Rect(-WIDTH * 10 +dwidth, HEIGHT - 80, WIDTH * 20, 100),  # ground
+    pygame.Rect(-300+dwidth, 550+dheight, 150, 30),
+    pygame.Rect(1100+dwidth, 500+dheight, 150, 30),
+    pygame.Rect(600+dwidth, 300+dheight, 150, 30),
+    pygame.Rect(400+dwidth, 170+dheight, 150, 60),
+    pygame.Rect(-1100+dwidth, 110+dheight, 1500, 120),
+    pygame.Rect(1100+dwidth, 120+dheight, 1500, 80),
+    pygame.Rect(800+dwidth, 350+dheight, 200, 30)
+    ]
 # Bullets 
 bullets = []
 bullet_speed = 12
@@ -133,6 +142,9 @@ while True:
             pygame.quit()
             sys.exit()
 
+
+
+
         for button in buttons:
             if button.clicked(event) and meny == True and options == False:
                 print(f"{button.text} clicked!")
@@ -144,12 +156,14 @@ while True:
                 if button.text == "Play":
                     meny = False
                     solids = [
-                        pygame.Rect(0+dwidth, 550+dheight, 200, 100),
                         pygame.Rect(-WIDTH * 10 +dwidth, HEIGHT - 80, WIDTH * 20, 100),  # ground
-                        pygame.Rect(-300+dwidth, 450+dheight, 150, 30),
-                        pygame.Rect(400+dwidth, 400+dheight, 150, 30),
-                        pygame.Rect(400+dwidth, 100+dheight, 150, 30),
-                        pygame.Rect(800+dwidth, 250+dheight, 200, 30)
+                        pygame.Rect(-300+dwidth, 550+dheight, 150, 30),
+                        pygame.Rect(1100+dwidth, 500+dheight, 150, 30),
+                        pygame.Rect(600+dwidth, 300+dheight, 150, 30),
+                        pygame.Rect(400+dwidth, 170+dheight, 150, 60),
+                        pygame.Rect(-1100+dwidth, 110+dheight, 1500, 120),
+                        pygame.Rect(1100+dwidth, 120+dheight, 1500, 80),
+                        pygame.Rect(800+dwidth, 350+dheight, 200, 30)
                         ]
                     player = pygame.Rect(player.x +dwidth/2, player.y +dheight, square_width, square_height)
                     pygame.display.flip()
@@ -158,7 +172,7 @@ while True:
                     options = True
 
         for button in option:
-            if button.clicked(event) and options == True:
+            if button.clicked(event) and options == True and meny == True:
                 print(f"{button.text} clicked!")
 
                 if button.text == "Menu":
@@ -211,16 +225,20 @@ while True:
     if keys[pygame.K_a] or keys[pygame.K_LEFT]:
         dx = current_speed
         sprite_sheet = spritesheet.SpritreSheet(_run_left)
+
+
+
+
     if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
         dx = -current_speed
         sprite_sheet = spritesheet.SpritreSheet(_run)
     if keys[pygame.K_LSHIFT] and on_ground and dx != 0:
+
         current_speed = 10
         jump_strength = -15
     else: 
         jump_strength = -13
         current_speed = 8
-
 
 
 
@@ -265,9 +283,45 @@ while True:
                 y_velocity = 0
 
 
-    if player.y < 100:
+    # teleports the player upp or down
+    if (player.y <= -50 and height_level == 1) or keys[pygame.K_LEFT] :
+        pygame.time.set_timer(teleport_timer, 5000)
+        height_level = 2
+        dheight += 550
+        player.y += 550
 
-        world_y += HEIGHT-300
+        solids = [
+
+            pygame.Rect(-1100+dwidth, 90+dheight, 1500, 140),
+            pygame.Rect(1100+dwidth, 120+dheight, 1500, 80),
+
+            pygame.Rect(800+dwidth, -30+dheight, 200, 30)
+
+            ]
+        dheight = 0
+        player = pygame.Rect(player.x +dwidth/2, player.y +dheight, square_width, square_height)
+        pygame.display.flip()
+
+    if (player.y >= 600 and height_level == 2 and height_level == 2) or keys[pygame.K_LEFT] :
+        height_level = 1
+        player.y -= 520
+
+        solids = [
+            pygame.Rect(-WIDTH * 10 +dwidth, HEIGHT - 80, WIDTH * 20, 100),  # ground
+            pygame.Rect(-300+dwidth, 550+dheight, 150, 30),
+            pygame.Rect(1100+dwidth, 500+dheight, 150, 30),
+            pygame.Rect(600+dwidth, 300+dheight, 150, 30),
+            pygame.Rect(400+dwidth, 170+dheight, 150, 60),
+            pygame.Rect(-1100+dwidth, 110+dheight, 1500, 120),
+            pygame.Rect(1100+dwidth, 120+dheight, 1500, 80),
+            pygame.Rect(800+dwidth, 350+dheight, 200, 30)
+            ]
+        dheight = 0
+        player = pygame.Rect(player.x +dwidth/2, player.y +dheight, square_width, square_height)
+        pygame.display.flip()
+    
+
+
 
 
     current_time = pygame.time.get_ticks()
